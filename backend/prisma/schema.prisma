@@ -24,6 +24,9 @@ model User {
 
   hives         Hive[]
   refreshTokens RefreshToken[]
+  clanMember    ClanMember?
+  sentTrades    ClanTrade[]    @relation("SentTrades")
+  receivedTrades ClanTrade[]   @relation("ReceivedTrades")
 
   @@map("users")
 }
@@ -133,6 +136,100 @@ model Movement {
   @@index([fromHiveId])
   @@index([targetQ, targetR])
   @@map("movements")
+}
+
+// --- Clan (Boly / Klán) ---
+
+model Clan {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String   @default("")
+  colorHex    String   @default("#cc3333") @map("color_hex")
+  level       Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  members             ClanMember[]
+  outgoingDiplomacies ClanDiplomacy[] @relation("ClanDiplomacies")
+  incomingDiplomacies ClanDiplomacy[] @relation("TargetClanDiplomacies")
+  trades              ClanTrade[]
+  trails              FeromonTrail[]
+
+  @@map("clans")
+}
+
+// --- ClanMember (Klán tag) ---
+
+model ClanMember {
+  id       String   @id @default(uuid())
+  clanId   String   @map("clan_id")
+  userId   String   @map("user_id")
+  role     String   @default("MEMBER") // LEADER, OFFICER, MEMBER
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  clan Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@index([clanId])
+  @@map("clan_members")
+}
+
+// --- ClanDiplomacy (Klánok közötti diplomácia) ---
+
+model ClanDiplomacy {
+  id            String   @id @default(uuid())
+  clanId        String   @map("clan_id")
+  targetClanId  String   @map("target_clan_id")
+  status        String   @default("NEUTRAL") // ALLY, ENEMY, NAP, NEUTRAL
+  setAt         DateTime @default(now()) @map("set_at")
+
+  clan       Clan @relation("ClanDiplomacies", fields: [clanId], references: [id], onDelete: Cascade)
+  targetClan Clan @relation("TargetClanDiplomacies", fields: [targetClanId], references: [id], onDelete: Cascade)
+
+  @@unique([clanId, targetClanId])
+  @@index([clanId])
+  @@index([targetClanId])
+  @@map("clan_diplomacies")
+}
+
+// --- ClanTrade (Belső feromon piac / erőforrás csere) ---
+
+model ClanTrade {
+  id           String   @id @default(uuid())
+  clanId       String   @map("clan_id")
+  fromUserId   String   @map("from_user_id")
+  toUserId     String   @map("to_user_id")
+  resourceType String   @map("resource_type") // BIOMASS, WATER, DNA_NECTAR
+  amount       Float
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  clan     Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  fromUser User @relation("SentTrades", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("ReceivedTrades", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([clanId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@map("clan_trades")
+}
+
+// --- Refresh Token (for JWT refresh) ---
+
+// --- FeromonTrail (Feromon-nyom a térképen) ---
+
+model FeromonTrail {
+  id        String   @id @default(uuid())
+  clanId    String   @map("clan_id")
+  type      String   @default("ATTACK") // ATTACK, DEFEND
+  path      Json     @default("[]") // HexCoord[]: [{q, r}, ...]
+  expiresAt DateTime @map("expires_at")
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  clan Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
+
+  @@index([clanId])
+  @@map("feromon_trails")
 }
 
 // --- Refresh Token (for JWT refresh) ---

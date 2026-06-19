@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useMilitaryStore } from '@/stores/military.store';
+import { useMovementStore } from '@/stores/movement.store';
 import { useHiveStore } from '@/stores/hive.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'vue-router';
+import { AttackType } from '@a-raj/shared';
 import Hatchery from '@/components/military/Hatchery.vue';
 import MilitaryOverview from '@/components/military/MilitaryOverview.vue';
 
 const militaryStore = useMilitaryStore();
+const movementStore = useMovementStore();
 const hiveStore = useHiveStore();
 const auth = useAuthStore();
 const router = useRouter();
@@ -21,6 +24,7 @@ onMounted(async () => {
     await hiveStore.fetchHive();
   }
   await militaryStore.fetchUnits();
+  await movementStore.fetchMovements();
 });
 </script>
 
@@ -65,6 +69,29 @@ onMounted(async () => {
         :grouped-key="group.type"
         :batches="group.batches"
       />
+    </div>
+
+    <!-- Active movements -->
+    <div
+      v-if="movementStore.hasActiveMovements"
+      class="mb-6 p-4 rounded-xl border border-amber-800/30 bg-amber-950/20"
+    >
+      <h2 class="text-sm font-semibold text-amber-500 mb-2">
+        🚀 Aktív mozgások
+      </h2>
+      <div
+        v-for="m in movementStore.movements"
+        :key="m.id"
+        class="flex items-center justify-between py-1.5 border-b border-amber-950/20 last:border-0"
+      >
+        <div class="text-xs text-zinc-400">
+          {{ m.attackType === AttackType.RAID ? '🗡️ Rablás' : '💣 Ostrom' }}
+          → ({{ m.targetQ }}, {{ m.targetR }})
+        </div>
+        <div class="text-xs text-zinc-500">
+          {{ m.units.reduce((s, u) => s + u.count, 0) }} egység
+        </div>
+      </div>
     </div>
 
     <!-- Empty state -->

@@ -5,7 +5,7 @@
 Dokumentum célja: Részletes, check-list jellegű feladatlista minden sprinthez.
 Fejlesztés közben folyamatosan frissítendő.
 
-Utolsó frissítés: 2026-06-19 (Sprint 2.4 kész — Phase 2 COMPLETE, Phase 2 retrospektív kész)
+Utolsó frissítés: 2026-06-19 (Sprint 4.3 kész — Feromon-Nyomok)
 Státuszok: [ ] Todo, [~] In Progress, [x] Done
 
 ================================================================================
@@ -133,66 +133,90 @@ PHASE 3: World Map & Bloodshed (Térkép & Harc)
 [x] Utazási idő számítás: shared/math.ts (calculateTravelTime már létezett)
 
 --- Sprint 3.2: Térkép Renderelés ---
-[ ] MapView.vue – HTML5 Canvas
-[ ] axialToPixel(q, r, size) – hexa koordináta -> pixel
-[ ] drawHex() – hexa rajzoló függvény
-[ ] Kamera: pan (drag), zoom (scroll)
-[ ] Kaptárak renderelése (pulzáló körök)
-[ ] Hegyek, tavak, PvE fészkek renderelése
-[ ] Földalatti/felszíni réteg váltás
-[ ] Kattintás -> hexa kiválasztás -> kaptár info panel
+[x] MapView.vue – HTML5 Canvas (requestAnimationFrame render loop, onUnmounted cleanup)
+[x] axialToPixel(q, r, size) – hexa koordináta -> pixel (shared/math.ts)
+[x] pixelToAxial(px, py, size) – pixel -> hexa koordináta (shared/math.ts)
+[x] drawHex() – hexa rajzoló függvény (flat-top, terrain fill, icon render)
+[x] Kamera: pan (drag), zoom (scroll + buttons, 0.3-3x range)
+[x] Kaptárak renderelése (pulzáló körök, 🏠 icon)
+[x] Hegyek, tavak, PvE fészkek renderelése (⛰ 💧 👾 ikonok)
+[x] Kattintás -> hexa kiválasztás -> info panel (koordináta, típus, kaptár név)
+[x] Kamera automatikus pozícionálás a saját kaptárra (onMounted + watch)
+[x] Debounce-olt viewport betöltés (200ms, 5-hex küszöb)
+[x] Canvas resize kezelés (onResize, kezdeti méretezés)
+[ ] Földalatti/felszíni réteg váltás (elhalasztva)
 
 --- Sprint 3.3: Mozgás & Támadás Rendszer ---
-[ ] MovementController: POST /movement/send
-[ ] BullMQ combat job ütemezése
-[ ] CombatService.ts: resolveCombat() $transaction-ben
-[ ] Tüskés vs. Savas sebzés számítás
-[ ] Rablóhadjárat logika (nyersanyag lopás)
-[ ] Ostrom logika (kamrák rombolása)
-[ ] Visszaút ütemezése (túlélő egységek)
-[ ] CombatReport generálása
-[ ] GET /movement/active – aktív mozgások
+[x] MovementController: POST /movement/send (SendMovementDto: attackType + targetQ + targetR + UnitSelectionDto[])
+[x] CombatService: resolveCombat() egy $transaction-ben (atomikus egység kezelés, áldozatok, loot, kamra rombolás, movement törlés)
+[x] Tüskés vs. Savas sebzés számítás (attackPhysical+attackAcid vs defensePhysical+defenseAcid power-ratio formula)
+[x] Rablóhadjárat logika (RAID: carryingCapacity * 0.5 faktor, biomassza 60% / víz 30% / DNS 10% lopás)
+[x] Ostrom logika (SIEGE: max 2 véletlen kamra rombolása, Queen kizárva, level-1=törlés, magasabb=decrement)
+[x] Védő áldozatok alkalmazása RAID és SIEGE esetén is
+[x] PvE fészek preset (50/20/40/15 statok, 200 bio/100 víz/10 DNS jutalom)
+[x] Acid Gland védelmi bónusz (defensePerLevel * level)
+[x] CombatReport generálása (id, attackerId, defenderId, losses, resourcesLooted?, chambersDestroyed?, isVictory)
+[x] GET /movement/active – aktív mozgások lekérése
+[x] MovementModule + CombatModule regisztrálva az app.module.ts-ben
+[ ] BullMQ combat job ütemezése (elhalasztva – instant resolution, mint a többi szolgáltatás)
+[ ] Visszaút ütemezése (túlélő egységek) (elhalasztva – instant resolution miatt nincs szükség rá)
 
 --- Sprint 3.4: Harc UI & Riportok ---
-[ ] CombatReport.vue – harcjelentés részletes nézet
-[ ] AttackPanel.vue – támadás modal (cél, sereg kiválasztás)
-[ ] AttackNotification.vue – bejövő támadás jelzés
-[ ] Villogó vörös képernyőszél (CSS animáció)
-[ ] Érkezési visszaszámláló a támadásokhoz
-[ ] Térképes támadás animáció (mozgó pontok)
+[x] CombatReport.vue – harcjelentés részletes nézet (Teleport modal, veszteségek, zsákmány, kamrák, victory/defeat animáció)
+[x] AttackPanel.vue – támadás modal (Teleport panel, célpont info, RAID/SIEGE toggle, unit slider-ek, hexDistance travel time)
+[x] AttackNotification.vue – villogó képernyőszél CSS animáció (victory: amber glow, defeat: red double-pulse)
+[x] MapView integráció: canAttackSelected (PVE_NEST + ellenséges HIVE), "Támadás" gomb az info panel-en
+[x] MilitaryView integráció: aktív mozgások szekció (típus, cél, egységszám)
+[x] movement.service.ts + movement.store.ts (sendAttack, screenFlash, combatReport modal state)
+[x] frontend/src/lib/unit-labels.ts – közös unit név helper (getUnitName, getUnitNameShort)
+[ ] Érkezési visszaszámláló (BullMQ deferred – instant combat miatt nem releváns)
 
 ================================================================================
 PHASE 4: Swarm Mind & Feromons (Klánok & Valós idejű funkciók)
 ================================================================================
 
 --- Sprint 4.1: Klán Rendszer ---
-[ ] Prisma: Clan, ClanMember modellek
-[ ] ClanController: POST /clan/create
-[ ] ClanController: POST /clan/join
-[ ] ClanController: GET /clan/:id
-[ ] Klán rangok: Vezér, Tiszt, Tag
-[ ] ClanMember jogosultságok validálása
-[ ] Belső feromon piac: POST /clan/trade
-[ ] Boly kaptár: közös fejlesztés
-[ ] Diplomácia: szövetség, hadüzenet, NAP
+[x] Prisma: Clan modell (name @unique, description, colorHex, level)
+[x] Prisma: ClanMember modell (@@unique userId, role: LEADER/OFFICER/MEMBER)
+[x] Prisma: ClanDiplomacy modell (@@unique clanId+targetClanId, named relations)
+[x] Prisma: ClanTrade modell (fromUser/toUser named relations, resourceType)
+[x] ClanController: POST /clan/create (name 2-30 chars, colorHex #rrggbb, $transaction)
+[x] ClanController: POST /clan/join (membership check, P2002 race-condition kezelve)
+[x] ClanController: GET /clan/:id (clan + members lista)
+[x] ClanController: POST /clan/leave (leader utolsó tagként disband, cascade delete)
+[x] ClanController: POST /clan/promote (leader-only, demote+pomote $transaction-ben)
+[x] Klán rangok: LEADER/OFFICER/MEMBER — promoteMember jogosultság ellenőrzéssel
+[x] Belső feromon piac: POST /clan/trade (TOCTOU-védett $transaction, resourceType: BIOMASS/WATER/DNA_NECTAR)
+[x] Diplomácia: POST /clan/diplomacies (upsert, leader/officer-only, ALLY/ENEMY/NAP/NEUTRAL)
+[x] Diplomácia: GET /clan/diplomacies (targetClan info-val)
+[x] ClanModule regisztrálva az app.module.ts-ben
 
 --- Sprint 4.2: WebSocket Infrastruktúra ---
-[ ] NestJS @WebSocketGateway létrehozása
-[ ] JWT autentikáció socket kapcsolaton
-[ ] Socket room-ok: klán (clan_<id>), globális, privát
-[ ] Event tipizálás shared/types.ts-ben
-[ ] Reconnect logika (frontend oldalon)
-[ ] Socket middleware: rate limiting
+[x] NestJS @WebSocketGateway létrehozása (ws.gateway.ts: Socket.io, pingInterval, CORS)
+[x] JWT autentikáció socket kapcsolaton (handshake.auth.token → jwtService.verify, invalid→disconnect)
+[x] Socket room-ok: user:<userId> (privát), clan:<clanId> (klán), global (mindenkinek)
+[x] Klán room auto-join ClanMember alapján (connect-kor)
+[x] Event tipizálás shared/types.ts-ben (WsEvent enum, WsChatMessage, WsAttackIncoming — már létezett)
+[x] Chat handlerek: clan chat, global chat, private message (mind rate-limit-elve)
+[x] Rate limiting: sliding window (10 event/sec/socket) — checkRateLimit()
+[x] sendAttackNotification + sendNotification publikus metódusok (CombatService számára)
+[x] Frontend ws-client.ts: Socket.io singleton, JWT handshake (auth.token), exponential backoff reconnect (1s→30s)
+[x] Frontend useWebSocket.ts: Vue composable, auth.token watch → auto connect/disconnect
+[x] WsModule (@Global, JwtModule.registerAsync) regisztrálva app.module.ts-ben
 
 --- Sprint 4.3: Feromon-Nyomok ---
-[ ] Prisma: FeromonTrail modell
-[ ] Canvas drag interakció (csak Officer role)
-[ ] Raycasting: egér koordináta -> hexa koordináta
-[ ] WSS_FEROMON_DRAW event kezelés (backend)
-[ ] Feromon mentés DB-be + broadcast klán tagoknak
-[ ] Feromon renderelés: izzó Bezier görbék
-[ ] Vörös (támadó) / Zöld (védő) feromon típusok
-[ ] Mozgási boost számítás: feromon átfedés detektálás
+[x] Prisma: FeromonTrail modell (clanId, type=ATTACK/DEFEND, path Json, expiresAt, createdBy)
+[x] PheromoneService: drawTrail (role check, path 2-50 validálás, DB mentés + WS broadcast), getActiveTrails
+[x] PheromoneController: POST /pheromone/draw (DrawTrailDto), GET /pheromone/active/:clanId
+[x] WsGateway handlePheromoneDraw: valós idejű broadcast clan:<id> room-ba, role check
+[x] MapView.vue: drawMode toggle, mousedown→mousemove→mouseup rajzolás, eventToHex raycasting
+[x] Feromon renderelés: Bezier-görbék (quadraticCurveTo), shadowBlur glow (piros=ATTACK, zöld=DEFEND)
+[x] Élő rajzolás WebSocket-en (PHEROMONE_DRAW emission, PHEROMONE_VISIBLE listener)
+[x] Canvas drawMode UI: ATTACK/DEFEND gombok, pont számláló, Mentés/Törlés/Kilépés
+[x] wsClient.on() generikus event listener + wsClient.emit()
+[x] PheromoneModule regisztrálva app.module.ts-ben
+[x] Canvas cursor kezelés: drawMode=crosshair, pan=grab/grabbing
+[ ] Mozgási boost számítás: feromon átfedés detektálás (Phase 5 postponed)
 
 --- Sprint 4.4: Chat & Közösségi Funkciók ---
 [ ] Klán chat (Socket.io room: clan_<id>)

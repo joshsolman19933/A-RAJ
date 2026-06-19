@@ -7,6 +7,10 @@ import { HiveModule } from './hive/hive.module.js';
 import { MilitaryModule } from './military/military.module.js';
 import { MutationModule } from './mutation/mutation.module.js';
 import { MapModule } from './map/map.module.js';
+import { MovementModule } from './movement/movement.module.js';
+import { ClanModule } from './clan/clan.module.js';
+import { WsModule } from './ws/ws.module.js';
+import { PheromoneModule } from './pheromone/pheromone.module.js';
 
 @Module({
   imports: [
@@ -21,6 +25,10 @@ import { MapModule } from './map/map.module.js';
     MilitaryModule,
     MutationModule,
     MapModule,
+    MovementModule,
+    ClanModule,
+    WsModule,
+    PheromoneModule,
   ],
 })
 export class AppModule {}
