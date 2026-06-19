@@ -1,0 +1,31 @@
+{
+  "name": "@a-raj/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint \"src/**/*.{ts,vue}\" --fix"
+  },
+  "dependencies": {
+    "@a-raj/shared": "*",
+    "axios": "^1.8.0",
+    "pinia": "^3.0.0",
+    "socket.io-client": "^4.8.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@vitejs/plugin-vue": "^5.2.0",
+    "autoprefixer": "^10.4.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.3.0",
+    "vite-plugin-pwa": "^0.21.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

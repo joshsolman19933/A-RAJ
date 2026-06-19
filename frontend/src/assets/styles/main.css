@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* A RAJ - Organikus Sci-Fi Téma */
+
+:root {
+  --color-bg-primary: #0a0202;
+  --color-bg-secondary: #120606;
+  --color-bg-card: #1a0a0a;
+  --color-accent: #8b0000;
+  --color-accent-glow: #ff2020;
+  --color-organic-green: #1a3a1a;
+  --color-organic-green-glow: #2d5a2d;
+  --color-mucus: #3a2a1a;
+  --color-text-primary: #e0d0c0;
+  --color-text-muted: #8a7a6a;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Pulsing organic vein animation for backgrounds */
+@keyframes pulse-vein {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.6; }
+}
+
+.vein-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(139, 0, 0, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(26, 58, 26, 0.1) 0%, transparent 50%),
+    var(--color-bg-primary);
+  animation: pulse-vein 4s ease-in-out infinite;
+}
+
+/* Red glow for incoming attacks */
+@keyframes attack-glow {
+  0%, 100% { box-shadow: inset 0 0 60px rgba(255, 0, 0, 0); }
+  50% { box-shadow: inset 0 0 60px rgba(255, 0, 0, 0.3); }
+}
+
+.attack-alert {
+  animation: attack-glow 1s ease-in-out infinite;
+}

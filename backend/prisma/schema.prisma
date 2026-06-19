@@ -1,0 +1,152 @@
+// ============================================================
+// A RAJ - Prisma Schema
+// Sprint 1.2: Core models (User, Hive, Chamber)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- User (Authentication) ---
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  premiumTier  String   @default("FREE") @map("premium_tier") // FREE | PREMIUM
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  hives         Hive[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+// --- Hive (Kaptár) ---
+
+model Hive {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  q           Int      @default(0)
+  r           Int      @default(0)
+  biomass     Float    @default(500)
+  water       Float    @default(300)
+  heat        Float    @default(100)
+  dnaNectar   Float    @default(0) @map("dna_nectar")
+  lastUpdated DateTime @default(now()) @map("last_updated")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chambers     Chamber[]
+  unitBatches  UnitBatch[]
+  mutations    Mutation[]
+  movements    Movement[]
+  mapHexes     MapHex[]
+
+  @@index([userId])
+  @@index([q, r])
+  @@map("hives")
+}
+
+// --- Chamber (Kamra / Épület) ---
+
+model Chamber {
+  id        String   @id @default(uuid())
+  hiveId    String   @map("hive_id")
+  type      String   // QUEEN, HATCHERY, DIGESTIVE_PIT, etc.
+  level     Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId])
+  @@map("chambers")
+}
+
+// --- UnitBatch (Egység csoport a keltetőből) ---
+
+model UnitBatch {
+  id        String   @id @default(uuid())
+  hiveId    String   @map("hive_id")
+  unitType  String   @map("unit_type")
+  count     Int
+  hatchedAt DateTime @map("hatched_at")
+  lifespan  Int      // lifespan in hours (snapshot from UNIT_STATS at hatch time)
+
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId])
+  @@map("unit_batches")
+}
+
+// --- Mutation (Kutatott mutáció) ---
+
+model Mutation {
+  id           String   @id @default(uuid())
+  hiveId       String   @map("hive_id")
+  mutationType String   @map("mutation_type")
+  level        Int      @default(1)
+
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@unique([hiveId, mutationType])
+  @@index([hiveId])
+  @@map("mutations")
+}
+
+// --- MapHex (Térkép hexa mező) ---
+
+model MapHex {
+  q      Int
+  r      Int
+  type   String   @default("EMPTY") // EMPTY, MOUNTAIN, LAKE, HIVE, PVE_NEST
+  hiveId String?  @map("hive_id")
+
+  hive Hive? @relation(fields: [hiveId], references: [id], onDelete: SetNull)
+
+  @@index([hiveId])
+
+  @@id([q, r])
+  @@map("map_hexes")
+}
+
+// --- Movement (Támadás / Mozgás) ---
+
+model Movement {
+  id          String   @id @default(uuid())
+  fromHiveId  String   @map("from_hive_id")
+  attackType  String   @map("attack_type") // RAID, SIEGE
+  targetQ     Int      @map("target_q")
+  targetR     Int      @map("target_r")
+  sentAt      DateTime @default(now()) @map("sent_at")
+  arriveAt    DateTime @map("arrive_at")
+  units       Json     @default("[]") // UnitBatchBrief[]: [{unitType, count}, ...]
+
+  fromHive Hive @relation(fields: [fromHiveId], references: [id], onDelete: Cascade)
+
+  @@index([fromHiveId])
+  @@index([targetQ, targetR])
+  @@map("movements")
+}
+
+// --- Refresh Token (for JWT refresh) ---
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
