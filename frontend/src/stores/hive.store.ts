@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { hiveService } from '@/services/hive.service';
 import type {
   HiveData,
+  HiveBrief,
   Resources,
   ProductionRates,
   ChamberData,
@@ -16,7 +17,12 @@ export const useHiveStore = defineStore('hive', () => {
   const error = ref<string | null>(null);
   const lastFetch = ref<Date | null>(null);
 
-  const hiveId = ref<string | null>(null);
+  // Multi-hive support
+  const hives = ref<HiveBrief[]>([]);
+  const activeHiveId = ref<string | null>(null);
+
+  // Derived ref for backward compatibility — always reflects activeHiveId
+  const hiveId = computed(() => activeHiveId.value);
   const hiveQ = ref(0);
   const hiveR = ref(0);
   const chambers = ref<ChamberData[]>([]);
@@ -54,14 +60,44 @@ export const useHiveStore = defineStore('hive', () => {
     () => productionRates.value.heatPerHour - productionRates.value.heatConsumptionPerHour,
   );
 
-  const hasHive = computed(() => !!hiveId.value);
+  const hasHive = computed(() => !!activeHiveId.value);
+
+  const hasMultipleHives = computed(() => hives.value.length > 1);
+
+  const activeHiveBrief = computed(() =>
+    hives.value.find((h) => h.id === activeHiveId.value) ?? null,
+  );
 
   // --- Actions ---
+
+  /** Fetch all hives for multi-hive support */
+  async function fetchHives() {
+    try {
+      hives.value = await hiveService.getAllHives();
+      // Set active from first hive if not set
+      if (!activeHiveId.value && hives.value.length > 0) {
+        activeHiveId.value = hives.value[0]!.id;
+      }
+    } catch {
+      // Silently ignore — hives list is auxiliary
+    }
+  }
+
+  /** Switch the active hive and fetch its full data */
+  async function switchHive(newHiveId: string) {
+    if (newHiveId === activeHiveId.value) return;
+    activeHiveId.value = newHiveId;
+    await fetchHive();
+  }
+
+  /** Fetch the currently active hive */
   async function fetchHive() {
     loading.value = true;
     error.value = null;
     try {
-      const data: HiveData = await hiveService.getHive();
+      const data: HiveData = await hiveService.getHive(
+        activeHiveId.value ?? undefined,
+      );
       applyHiveData(data);
       lastFetch.value = new Date();
     } catch (e: unknown) {
@@ -73,9 +109,9 @@ export const useHiveStore = defineStore('hive', () => {
   }
 
   function applyHiveData(data: HiveData) {
-    hiveId.value = data.id;
     hiveQ.value = data.q;
     hiveR.value = data.r;
+    activeHiveId.value = data.id;
     chambers.value = data.chambers;
     productionRates.value = data.productionRates;
     lastUpdated.value = data.lastUpdated;
@@ -217,11 +253,18 @@ export const useHiveStore = defineStore('hive', () => {
     chambers,
     lastUpdated,
     lastFetch,
+    // Multi-hive
+    hives,
+    activeHiveId,
     // Computed
     isHeatSustainable,
     netHeatPerHour,
     hasHive,
+    hasMultipleHives,
+    activeHiveBrief,
     // Actions
+    fetchHives,
+    switchHive,
     fetchHive,
     tickResources,
     getStorageCapacity,

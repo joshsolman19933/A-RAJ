@@ -2,7 +2,7 @@
 // A RAJ - Shared Constants
 // ============================================================
 
-import { UnitType, ChamberType, MutationType } from './enums.js';
+import { UnitType, ChamberType, MutationType, PveNestTier, CosmeticSkinType } from './enums.js';
 import type { UnitStats, MutationTreeNode, ChamberDefinition } from './types.js';
 
 // --- Unit Statistics ---
@@ -258,6 +258,14 @@ export const MUTATION_DNA_NECTAR_COST_PER_LEVEL = 100;
 /** Mutation research time in minutes per level */
 export const MUTATION_RESEARCH_TIME_MINUTES_PER_LEVEL = 60;
 
+// --- Queen Training ---
+
+/** DNA Nectar cost to train a new Queen */
+export const QUEEN_DNA_NECTAR_COST = 500;
+
+/** Minimum Hatchery level required to train a Queen */
+export const QUEEN_MIN_HATCHERY_LEVEL = 5;
+
 // --- Limits ---
 
 /** Maximum chambers per hive */
@@ -269,4 +277,78 @@ export const STARTING_RESOURCES = {
   water: 300,
   heat: 100,
   dnaNectar: 0,
+};
+
+// --- Cosmetic Skins ---
+
+/** Skin color hex codes for map rendering */
+export const SKIN_COLORS: Record<CosmeticSkinType, string | null> = {
+  [CosmeticSkinType.DEFAULT]: null, // default red (#cc3333)
+  [CosmeticSkinType.CRIMSON]: '#ff2244',
+  [CosmeticSkinType.OBSIDIAN]: '#1a1a2e',
+  [CosmeticSkinType.VENOM_GREEN]: '#22cc44',
+  [CosmeticSkinType.HIVE_GOLD]: '#ffaa00',
+  [CosmeticSkinType.SPECTRAL]: '#8866ff',
+};
+
+/** Cosmetic skin costs in Zselé */
+export const COSMETIC_COSTS: Record<CosmeticSkinType, number> = {
+  [CosmeticSkinType.DEFAULT]: 0,
+  [CosmeticSkinType.CRIMSON]: 200,
+  [CosmeticSkinType.OBSIDIAN]: 300,
+  [CosmeticSkinType.VENOM_GREEN]: 200,
+  [CosmeticSkinType.HIVE_GOLD]: 500,
+  [CosmeticSkinType.SPECTRAL]: 800,
+};
+
+/** Premium hatch boost multiplier (10% faster, never instant) */
+export const PREMIUM_HATCH_BOOST = 0.9;
+
+/** Monthly premium cost in Zselé */
+export const PREMIUM_MONTHLY_COST = 500;
+
+// --- PvE Nest Tiers ---
+
+export interface PveNestTierConfig {
+  attackPhysical: number;
+  attackAcid: number;
+  defensePhysical: number;
+  defenseAcid: number;
+  lootBiomass: number;
+  lootWater: number;
+  lootDnaNectar: number;
+  respawnHours: number;
+}
+
+export const PVE_NEST_TIERS: Record<PveNestTier, PveNestTierConfig> = {
+  [PveNestTier.EASY]: {
+    attackPhysical: 30,
+    attackAcid: 10,
+    defensePhysical: 25,
+    defenseAcid: 10,
+    lootBiomass: 150,
+    lootWater: 80,
+    lootDnaNectar: 5,
+    respawnHours: 2,
+  },
+  [PveNestTier.MEDIUM]: {
+    attackPhysical: 60,
+    attackAcid: 25,
+    defensePhysical: 50,
+    defenseAcid: 20,
+    lootBiomass: 400,
+    lootWater: 200,
+    lootDnaNectar: 15,
+    respawnHours: 6,
+  },
+  [PveNestTier.HARD]: {
+    attackPhysical: 100,
+    attackAcid: 50,
+    defensePhysical: 80,
+    defenseAcid: 35,
+    lootBiomass: 1000,
+    lootWater: 500,
+    lootDnaNectar: 40,
+    respawnHours: 24,
+  },
 };

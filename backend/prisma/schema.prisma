@@ -27,6 +27,7 @@ model User {
   clanMember    ClanMember?
   sentTrades    ClanTrade[]    @relation("SentTrades")
   receivedTrades ClanTrade[]   @relation("ReceivedTrades")
+  transactions  Transaction[]
 
   @@map("users")
 }
@@ -51,6 +52,8 @@ model Hive {
   mutations    Mutation[]
   movements    Movement[]
   mapHexes     MapHex[]
+  queenTraining QueenTraining?
+  cosmetic      HiveCosmetic?
 
   @@index([userId])
   @@index([q, r])
@@ -230,6 +233,67 @@ model FeromonTrail {
 
   @@index([clanId])
   @@map("feromon_trails")
+}
+
+// --- QueenTraining (Királynő képzés) ---
+
+model QueenTraining {
+  id          String   @id @default(uuid())
+  hiveId      String   @unique @map("hive_id")
+  status      String   @default("TRAINING") // TRAINING, READY, CANCELLED
+  startedAt   DateTime @default(now()) @map("started_at")
+  completesAt DateTime @map("completes_at")
+  completedAt DateTime? @map("completed_at")
+  jobId       String?  @map("job_id")
+
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId])
+  @@map("queen_training")
+}
+
+// --- PveNest (PvE fészek — nehézség & respawn) ---
+
+model PveNest {
+  id         String    @id @default(uuid())
+  q          Int
+  r          Int
+  tier       String    @default("EASY") // EASY, MEDIUM, HARD
+  defeatedAt DateTime? @map("defeated_at")
+  respawnAt  DateTime? @map("respawn_at")
+  jobId      String?   @map("job_id")
+
+  @@unique([q, r])
+  @@index([q, r])
+  @@map("pve_nests")
+}
+
+// --- Transaction (Monetizáció — vásárlási előzmények) ---
+
+model Transaction {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  type        String   @default("PREMIUM_PURCHASE") // PREMIUM_PURCHASE, COSMETIC_PURCHASE, ZSELE_PACK
+  amount      Float    @default(0)
+  zseleSpent  Int      @default(0) @map("zsele_spent")
+  description String   @default("")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("transactions")
+}
+
+// --- HiveCosmetic (Kozmetikai skinek kaptáranként) ---
+
+model HiveCosmetic {
+  hiveId   String @id @map("hive_id")
+  skinType String @default("DEFAULT") @map("skin_type") // DEFAULT, CRIMSON, OBSIDIAN, VENOM_GREEN, HIVE_GOLD, SPECTRAL
+
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@map("hive_cosmetics")
 }
 
 // --- Refresh Token (for JWT refresh) ---

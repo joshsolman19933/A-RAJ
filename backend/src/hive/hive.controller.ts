@@ -5,6 +5,7 @@ import {
   Body,
   UseGuards,
   Req,
+  Query,
   type Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
@@ -12,7 +13,7 @@ import { IsString, IsIn } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { HiveService } from './hive.service.js';
 import { ChamberType } from '@a-raj/shared';
-import type { HiveData, ChamberData } from '@a-raj/shared';
+import type { HiveData, HiveBrief, ChamberData } from '@a-raj/shared';
 
 export class UpgradeChamberDto {
   @IsString()
@@ -40,8 +41,18 @@ export class HiveController {
   @Get()
   @ApiOperation({ summary: 'Get current hive state (runs lazy resource calculation)' })
   @ApiResponse({ status: 200, description: 'Hive state with updated resources' })
-  async getHive(@Req() req: Request & { user: { userId: string } }): Promise<HiveData> {
-    return this.hiveService.getHive(req.user.userId);
+  async getHive(
+    @Req() req: Request & { user: { userId: string } },
+    @Query('hiveId') hiveId?: string,
+  ): Promise<HiveData> {
+    return this.hiveService.getHive(req.user.userId, hiveId);
+  }
+
+  @Get('list')
+  @ApiOperation({ summary: 'List all hives for the current user' })
+  @ApiResponse({ status: 200, description: 'List of hive summaries' })
+  async listHives(@Req() req: Request & { user: { userId: string } }): Promise<HiveBrief[]> {
+    return this.hiveService.getAllHives(req.user.userId);
   }
 
   @Post('upgrade')

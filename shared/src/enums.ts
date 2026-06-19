@@ -48,6 +48,7 @@ export enum HexType {
 export enum AttackType {
   RAID = 'RAID',
   SIEGE = 'SIEGE',
+  SWARM = 'SWARM',
 }
 
 /** Klán rangok */
@@ -78,4 +79,35 @@ export enum MutationType {
 export enum PremiumTier {
   FREE = 'FREE',
   PREMIUM = 'PREMIUM',
+}
+
+/** Királynő képzés státuszai */
+export enum QueenTrainingStatus {
+  TRAINING = 'TRAINING',
+  READY = 'READY',
+  CANCELLED = 'CANCELLED',
+}
+
+/** PvE fészek nehézségi szintek */
+export enum PveNestTier {
+  EASY = 'EASY',
+  MEDIUM = 'MEDIUM',
+  HARD = 'HARD',
+}
+
+/** Tranzakció típusok */
+export enum TransactionType {
+  PREMIUM_PURCHASE = 'PREMIUM_PURCHASE',
+  COSMETIC_PURCHASE = 'COSMETIC_PURCHASE',
+  ZSELE_PACK = 'ZSELE_PACK',
+}
+
+/** Kozmetikai skin típusok */
+export enum CosmeticSkinType {
+  DEFAULT = 'DEFAULT',
+  CRIMSON = 'CRIMSON',
+  OBSIDIAN = 'OBSIDIAN',
+  VENOM_GREEN = 'VENOM_GREEN',
+  HIVE_GOLD = 'HIVE_GOLD',
+  SPECTRAL = 'SPECTRAL',
 }

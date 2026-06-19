@@ -21,9 +21,11 @@ body {
   color: var(--color-text-primary);
   min-height: 100vh;
   min-height: 100dvh;
+  /* Safe area support for notched devices */
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
 }
 
-/* Pulsing organic vein animation for backgrounds */
+/* --- Organic vein background --- */
 @keyframes pulse-vein {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.6; }
@@ -37,7 +39,55 @@ body {
   animation: pulse-vein 4s ease-in-out infinite;
 }
 
-/* Red glow for incoming attacks */
+/* --- Chamber organic pulse --- */
+@keyframes chamber-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(139, 0, 0, 0.2); }
+  50% { box-shadow: 0 0 16px rgba(139, 0, 0, 0.4); }
+}
+
+.chamber-card {
+  animation: chamber-pulse 3s ease-in-out infinite;
+}
+.chamber-card:hover {
+  animation: none;
+  box-shadow: 0 0 20px rgba(139, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+/* --- Skeleton shimmer --- */
+@keyframes skeleton-shimmer-anim {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer-item {
+  background: linear-gradient(90deg,
+    rgba(39, 39, 42, 0.8) 25%,
+    rgba(63, 63, 70, 0.6) 50%,
+    rgba(39, 39, 42, 0.8) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer-anim 1.5s ease-in-out infinite;
+}
+
+/* --- Page enter transition --- */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: page-enter 0.3s ease-out;
+}
+
+/* --- Focus visible ring (keyboard navigation) --- */
+*:focus-visible {
+  outline: 2px solid rgba(139, 0, 0, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* --- Red glow for incoming attacks --- */
 @keyframes attack-glow {
   0%, 100% { box-shadow: inset 0 0 60px rgba(255, 0, 0, 0); }
   50% { box-shadow: inset 0 0 60px rgba(255, 0, 0, 0.3); }
@@ -45,4 +95,11 @@ body {
 
 .attack-alert {
   animation: attack-glow 1s ease-in-out infinite;
+}
+
+/* --- Touch targets: ensure minimum 44px height for standalone interactive elements --- */
+@media (pointer: coarse) {
+  button:not([class*="text-"]), a:not([class*="text-"]) {
+    min-height: 44px;
+  }
 }

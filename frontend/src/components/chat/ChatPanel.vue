@@ -2,6 +2,7 @@
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useChatStore } from '@/stores/chat.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { wsClient } from '@/lib/ws-client';
 import type { ChatMessage } from '@/stores/chat.store';
 
 const props = defineProps<{
@@ -83,7 +84,7 @@ function formatTime(iso: string): string {
 }
 
 function isOwn(msg: ChatMessage): boolean {
-  return msg.fromUserId === auth.userId;
+  return msg.fromUserId === auth.user?.userId;
 }
 
 onMounted(() => {
@@ -156,7 +157,7 @@ onMounted(() => {
         />
         <button
           class="px-3 py-1.5 bg-red-900/60 hover:bg-red-800/60 border border-red-800/40 rounded text-sm text-red-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          :disabled="!inputText.trim()"
+          :disabled="!inputText.trim() || !wsClient.isConnected"
           @click="handleSend"
         >
           Küldés
@@ -166,7 +167,8 @@ onMounted(() => {
         <span><kbd class="px-1 py-0.5 bg-zinc-800 rounded text-zinc-500">/c</kbd> klán</span>
         <span><kbd class="px-1 py-0.5 bg-zinc-800 rounded text-zinc-500">/g</kbd> globális</span>
         <span><kbd class="px-1 py-0.5 bg-zinc-800 rounded text-zinc-500">/w név</kbd> privát</span>
-        <span class="ml-auto">Enter küldés</span>
+        <span v-if="!wsClient.isConnected" class="ml-auto text-amber-600">⚡ Kapcsolódás...</span>
+        <span v-else class="ml-auto">Enter küldés</span>
       </div>
     </div>
   </div>

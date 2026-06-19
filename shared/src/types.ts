@@ -11,6 +11,10 @@ import {
   ClanRole,
   MutationType,
   PremiumTier,
+  QueenTrainingStatus,
+  PveNestTier,
+  TransactionType,
+  CosmeticSkinType,
 } from './enums.js';
 
 // --- Coordinates ---
@@ -244,4 +248,46 @@ export interface WsChatMessage {
   fromUsername: string;
   message: string;
   sentAt: string;
+}
+
+// --- Queen Training ---
+
+export interface QueenTrainingData {
+  id: string;
+  hiveId: string;
+  status: QueenTrainingStatus;
+  startedAt: string;
+  completesAt: string;
+  completedAt?: string;
+}
+
+export interface HiveBrief {
+  id: string;
+  q: number;
+  r: number;
+  resources: Resources;
+}
+
+export interface PveNestData {
+  id: string;
+  q: number;
+  r: number;
+  tier: PveNestTier;
+  defeatedAt: string | null;
+  respawnAt: string | null;
+}
+
+export interface TransactionData {
+  id: string;
+  userId: string;
+  type: TransactionType;
+  amount: number;
+  zseleSpent: number;
+  description: string;
+  createdAt: string;
+}
+
+export interface HiveCosmeticData {
+  hiveId: string;
+  skinType: CosmeticSkinType;
 }

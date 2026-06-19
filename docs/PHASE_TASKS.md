@@ -5,8 +5,16 @@
 Dokumentum célja: Részletes, check-list jellegű feladatlista minden sprinthez.
 Fejlesztés közben folyamatosan frissítendő.
 
-Utolsó frissítés: 2026-06-19 (Sprint 4.3 kész — Feromon-Nyomok)
+Utolsó frissítés: 2026-06-19 (Phase 6 Retrospektív elkészült ✅)
 Státuszok: [ ] Todo, [~] In Progress, [x] Done
+
+Kapcsolódó retrospektívek:
+  docs/PHASE_1_RETROSPECTIVE.md — MVP Core Loop tanulságai
+  docs/PHASE_2_RETROSPECTIVE.md — The Hatching tanulságai
+  docs/PHASE_3_RETROSPECTIVE.md — World Map & Bloodshed tanulságai
+  docs/PHASE_4_RETROSPECTIVE.md — Swarm Mind & Feromons tanulságai
+  docs/PHASE_5_RETROSPECTIVE.md — Terjeszkedés & Rajzás tanulságai
+  docs/PHASE_6_RETROSPECTIVE.md — Polish, PvE, Monetizáció & Launch tanulságai
 
 ================================================================================
 PHASE 1: Minimum Viable Hive (MVP Core Loop)
@@ -218,72 +226,101 @@ PHASE 4: Swarm Mind & Feromons (Klánok & Valós idejű funkciók)
 [x] Canvas cursor kezelés: drawMode=crosshair, pan=grab/grabbing
 [ ] Mozgási boost számítás: feromon átfedés detektálás (Phase 5 postponed)
 
+--- Sprint 4.4b: Unit Tesztek Pótlása (ClanService + PheromoneService) ---
+[x] ClanService unit tesztek (39 db): createClan, joinClan, leaveClan, promoteMember, tradeResources, setDiplomacy, getDiplomacies, getDiplomaciesForUser, getClan
+[x] PheromoneService unit tesztek (14 db): drawTrail, getActiveTrails, broadcastDrawing
+[x] Összes teszt zöld: 53 új + 12 meglévő = 65 teszt
+[x] Hiányzó peremfeltételek pótolva: getClan (not found, members, leaderId), promoteMember null-target, WsGateway broadcast verifikáció
+
 --- Sprint 4.4: Chat & Közösségi Funkciók ---
-[ ] Klán chat (Socket.io room: clan_<id>)
-[ ] Privát üzenetek (Socket.io room: user_<id>)
-[ ] Globális chat
-[ ] Chat UI komponens (üzenetlista, input)
-[ ] Chat parancsok (/w, /c, /g)
-[ ] Értesítési rendszer (WebSocket push)
-[ ] NotificationPanel.vue – értesítések listája
+[x] Chat store (chat.store.ts): üzenet tömbök (clan/global/private), értesítések, unread számlálók, WebSocket listener regisztráció, parseCommand
+[x] ChatPanel.vue: üzenetlista auto-scroll-lal, input parancssorral (/w /c /g), saját/idegen üzenet formázás, Enter küldés, kapcsolódás állapot jelző
+[x] ChatView.vue: tabbed nézet (Klán/Globális), privát üzenet sidebar, NotificationPanel integráció
+[x] NotificationPanel.vue: csengő ikon olvasatlan badge-dzsel, dropdown értesítési lista, @blur bezárás, Transition animáció
+[x] Router frissítve: /chat útvonal (lazy import, requiresAuth meta)
+[x] AppShell frissítve: Chat navigációs link (desktop header + mobil bottom nav)
+[x] Parancsok: /w <felhasználó> <üzenet> (privát), /c <üzenet> (klán), /g <üzenet> (globális)
+[x] WebSocket kapcsolat állapot visszajelzés (ChatPanel: "⚡ Kapcsolódás..." a send gomb tiltásával)
 
 ================================================================================
 PHASE 5: Terjeszkedés & Rajzás
 ================================================================================
 
 --- Sprint 5.1: Királynő Képzés ---
-[ ] Prisma: QueenTraining modell
-[ ] QueenController: POST /queen/train
-[ ] Magas szintű Keltető követelmény ellenőrzése
-[ ] Nyersanyag költségek: Biomassza + DNS Nektár
-[ ] BullMQ job: képzés befejezése
-[ ] Királynő entitás létrehozása (speciális UnitBatch)
+[x] Prisma: QueenTraining modell (@unique hiveId, status: TRAINING/READY/CANCELLED, jobId, Hatchery szint követelmény)
+[x] shared: QUEEN_DNA_NECTAR_COST=500, QUEEN_MIN_HATCHERY_LEVEL=5, QueenTrainingStatus enum, QueenTrainingData interface
+[x] QueenTrainingService: trainQueen (Keltető lv5 check, resource validáció, TOCTOU-védett $transaction, BullMQ delayed job 480 perc)
+[x] QueenTrainingService: completeTraining ($transaction: status→READY + QUEEN UnitBatch létrehozás immortal lifespan=0-val)
+[x] QueenController: POST /queen/train (JWT védett), GET /queen/status
+[x] QueenTrainingProcessor (BullMQ WorkerHost): 3 retry exponenciális backoff-fal, idempotens completeTraining hívás
+[x] BullMQ infrastruktúra: BullModule.forRootAsync (Redis kapcsolat ConfigService-ből), QueenModule.registerQueue
+[x] QueenModule + app.module.ts regisztráció (ez az ELSŐ BullMQ integráció a projektben!)
+[x] Typecheck: shared ✅ + backend ✅, tesztek: 69/69 ✅
 
 --- Sprint 5.2: Rajzás Mechanika ---
-[ ] QueenController: POST /queen/swarm
-[ ] Cél hexa validálása (üres, elérhető)
-[ ] Kísérő sereg hozzárendelése
-[ ] Mozgás a térképen (Movement séma)
-[ ] Sebezhető állapot: támadás esetén Királynő pusztulhat
-[ ] Új kaptár létrehozása megérkezéskor
-[ ] Kísérő sereg "beépülése" (törlés)
-[ ] Rajzás animáció a térképen
+[x] AttackType.SWARM hozzáadva shared/enums.ts-hez
+[x] SwarmService: initiateSwarm (Queen READY check, target EMPTY validálás, escort unit validálás, Queen+escort eltávolítás $transaction-ben, Movement SWARM létrehozás, BullMQ delayed travel job)
+[x] SwarmService: completeSwarm (TOCTOU-védett $transaction: hex EMPTY guard + új Hive STARTING_RESOURCES-szel + Queen Chamber L1 + MapHex→HIVE + Movement törlés)
+[x] SwarmService: getActiveSwarms (aktív SWARM mozgások lekérése)
+[x] SwarmProcessor: BullMQ WorkerHost, completeSwarm hívás, 3 retry exponenciális backoff-fal
+[x] QueenController: POST /queen/swarm (SwarmDto: targetQ/R + escortUnits[]), GET /queen/swarm/status
+[x] QueenModule: SWARM_QUEUE regisztrálva, SwarmService+SwarmProcessor regisztrálva
+[x] Idempotencia védelem: hex EMPTY guard a $transaction-en belül (race-safe), queenRemaining>0 ellenőrzés
+[x] Typecheck: shared ✅ + backend ✅, tesztek: 69/69 ✅
 
 --- Sprint 5.3: Multi-Hive Management UI ---
-[ ] HiveSwitcher.vue – kaptárak közötti váltás
-[ ] Összesített erőforrás nézet
-[ ] QueenTrainingPanel.vue – Királynő képzés kezelő
-[ ] SwarmTargetPicker.vue – célpont kiválasztás térképen
-[ ] Rajzás állapot követés
+[x] Backend: GET /hive/list (getAllHives HiveBrief[]), GET /hive?hiveId= paraméter, NotFoundException érvénytelen hiveId esetén
+[x] Queen service: trainQueen(), getQueenStatus(), launchSwarm(), getSwarmStatus() — API hívások
+[x] Hive service bővítés: getAllHives(), getHive(hiveId?) query paraméterrel
+[x] Hive store multi-hive bővítés: hives[], activeHiveId, hasMultipleHives, activeHiveBrief, fetchHives, switchHive
+[x] HiveSwitcher.vue — kaptárak közötti dropdown váltás (click-toggle mobilbarát, koordináták + erőforrás előnézet)
+[x] QueenTrainingPanel.vue — Királynő képzés UI: státusz (TRAINING/READY/NONE), visszaszámláló timer (30s), progress bar, erőforrás költség rács (4 nyersanyag), Keltető szint ellenőrzés, hiányzó erőforrás lista, train gomb
+[x] SwarmTargetPicker.vue — kísérő sereg választó (+/–/max gombok), utazási idő becslés, rajzás indítás, siker állapot
+[x] QueenView.vue — Rajzás nézet (HiveSwitcher + QueenTrainingPanel + aktív rajzás lista progress bar-okkal, visszaszámlálóval)
+[x] MapView integráció: SwarmTargetPicker meghívása EMPTY hexára kattintáskor, hasReadyQueen ellenőrzés, "Rajzás Indítása" gomb
+[x] Router: /queen útvonal (lazy import, requiresAuth)
+[x] AppShell: Rajzás navigációs link (desktop header + mobil bottom nav)
+[x] Typecheck: shared ✅ + backend ✅ + frontend ✅, tesztek: 69/69 ✅
 
 ================================================================================
 PHASE 6: Polish, PvE, Monetizáció & Launch
 ================================================================================
 
 --- Sprint 6.1: PvE Rendszer ---
-[ ] PvE fészkek a térképen (MapHex type: 'PVE')
-[ ] AI ellenfelek statikus erősséggel
-[ ] PvE jutalmak: DNS Nektár, Biomassza
-[ ] Fészek respawn timer
-[ ] PvE harcjelentés (CombatReport séma)
+[x] PveNestTier enum (EASY/MEDIUM/HARD) + PVE_NEST_TIERS konfiguráció (statok, loot, respawnHours tier-enként)
+[x] PveNest Prisma modell (@@unique q_r, tier, defeatedAt, respawnAt, jobId) + migráció
+[x] PveService: getNests (viewpoint lekérés), getNestTierConfig (tier-ből statok CombatService-nek, read-only), markDefeated (BullMQ respawn job scheduling), respawnNest (state nullázás + MapHex helyreállítás)
+[x] PveRespawnProcessor (BullMQ WorkerHost): 3 retry exponenciális backoff-fal
+[x] CombatService frissítés: PVE_NEST_PRESET eltávolítva, helyette pveService.getNestTierConfig() tier-ből
+[x] MovementService frissítés: sikeres PvE combat után pveService.markDefeated() hívás (fire-and-forget)
+[x] PveController: GET /pve/nests?qMin=&qMax=&rMin=&rMax= (NaN védelemmel)
+[x] PveModule + PVE_RESPAWN_QUEUE regisztrálva, app.module.ts + CombatModule + MovementModule importálják
+[x] Map seed frissítve: PveNest rekordok tier eloszlással (50% EASY / 35% MEDIUM / 15% HARD), deleteMany() idempotens
+[x] Typecheck: shared ✅ + backend ✅, tesztek: 69/69 ✅
+[x] Code review javítások: dead EngineModule import, NaN query param védelem, getNestTierConfig dead code + side effect eltávolítva, job.id undefined check, map-seed idempotens
 
 --- Sprint 6.2: Monetizáció ---
-[ ] Prisma: PremiumAccount, Transaction modellek
-[ ] "Zselé" prémium valuta rendszer
-[ ] Prémium fiók előnyök (építési sorok, szűrők)
-[ ] Keltetési boost alkalmazása (-10% idő)
-[ ] Kozmetikai skinek a kaptárhoz
-[ ] PaymentProvider interfész
-[ ] Stripe integráció (webhook kezelés)
+[x] TransactionType enum (PREMIUM_PURCHASE/COSMETIC_PURCHASE/ZSELE_PACK) + CosmeticSkinType enum (6 skin)
+[x] Transaction Prisma modell (userId FK, type, amount, zseleSpent, description) + HiveCosmetic modell (hiveId PK, skinType)
+[x] shared/constants.ts: SKIN_COLORS (hex kódok), COSMETIC_COSTS (Zselé árak), PREMIUM_HATCH_BOOST=0.9, PREMIUM_MONTHLY_COST=500
+[x] PremiumService: getStatus (JWT-ból tier, elkerüli felesleges DB query-t), activatePremium ($transaction user update + tranzakció), getHatchBoostFactor (1.0 FREE / 0.9 PREMIUM), getCosmetics/setCosmetic (upsert), getTransactions
+[x] PremiumController: GET /premium/status, POST /premium/activate, GET /premium/cosmetics, POST /premium/cosmetics (SetCosmeticDto validációval), GET /premium/transactions
+[x] MilitaryService: hatch boost alkalmazva (calculateHatchTime * boostFactor, TODO BullMQ job delay-hoz)
+[x] PremiumModule + app.module.ts + MilitaryModule regisztráció
+[x] Code review javítások: SKIN_COLORS/COSMETIC_COSTS shared-be, SetCosmeticDto class-validator, getStatus JWT optimalizálás, TODO kommentek
+[x] Typecheck: shared ✅ + backend ✅, tesztek: 69/69 ✅
+[~] Stripe integráció (PaymentProvider interfész placeholder — Stripe SDK + webhook kezelés később)
 
 --- Sprint 6.3: UI Polírozás ---
-[ ] Organikus animációk (pulzálás, kikelés)
-[ ] Kamrák vizuális lüktetése (teljesítmény optimalizált)
-[ ] Hover állapotok, transitionök
-[ ] Reszponzív finomhangolás
-[ ] Accessibility: ARIA label-ek, billentyűzet navigáció
-[ ] Loading skeleton screen-ek
-[ ] Error boundary komponens
+[x] ErrorBoundary.vue: onErrorCaptured, fallback UI retry gombbal, hiba részletek toggle, :aria-expanded
+[x] LoadingSkeleton.vue: shimmer CSS animáció, 4 variáns (card/text/resource/chamber-grid), role="status", sr-only fallback
+[x] main.css: @keyframes chamber-pulse (box-shadow pulse + hover lift), skeleton-shimmer-anim, page-enter (opacity+tY), *:focus-visible ring, @media (pointer: coarse) touch targets, safe-area body padding
+[x] AppShell.vue: role="banner", aria-label logo/nav/main/logout, page-enter main-en, safe-area mobil nav-on
+[x] ChamberCard.vue: chamber-card pulse osztály, aria-label + title upgrade gombon
+[x] HiveSwitcher.vue: :aria-haspopup/:aria-expanded, role="listbox", role="option" + :aria-selected
+[x] HiveView.vue: LoadingSkeleton (resource + chamber-grid), ErrorBoundary wrappolás
+[x] Typecheck: frontend vue-tsc ✅
+[~] ARIA label-ek további komponenseken (AttackPanel, CombatReport, ChatPanel, NotificationPanel stb.) — következő körben
 
 --- Sprint 6.4: Launch Előkészítés ---
 [ ] Performance optimalizáció: DB indexek, cache strategy

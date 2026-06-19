@@ -5,6 +5,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'vue-router';
 import { ChamberType, CHAMBER_DEFINITIONS } from '@a-raj/shared';
 import type { ChamberData } from '@a-raj/shared';
+import ErrorBoundary from '@/components/layout/ErrorBoundary.vue';
+import LoadingSkeleton from '@/components/layout/LoadingSkeleton.vue';
 import ResourceBar from '@/components/hive/ResourceBar.vue';
 import ChamberCard from '@/components/hive/ChamberCard.vue';
 import BuildQueue from '@/components/hive/BuildQueue.vue';
@@ -23,7 +25,7 @@ const buildMenuOpen = ref(false);
 const buildableChambers = ref<ChamberType[]>([]);
 
 function updateBuildableChambers() {
-  const builtTypes = new Set(store.chambers.map((c) => c.type));
+  const builtTypes = new Set(store.chambers.map((c: ChamberData) => c.type));
   buildableChambers.value = Object.values(ChamberType).filter(
     (t) => !builtTypes.has(t),
   );
@@ -136,15 +138,14 @@ function sortChambers(chambers: ChamberData[]): ChamberData[] {
     <!-- Loading state -->
     <div
       v-if="store.loading && !store.hasHive"
-      class="text-center py-12"
+      class="py-6"
     >
-      <div class="animate-pulse text-red-700 text-lg">
-        Kaptár betöltése...
-      </div>
+      <LoadingSkeleton variant="resource" />
+      <LoadingSkeleton variant="chamber-grid" :count="4" class="mt-4" />
     </div>
 
     <!-- Main hive content -->
-    <template v-else>
+    <ErrorBoundary v-else>
       <!-- Resources -->
       <ResourceBar class="mb-6" />
 
@@ -174,6 +175,6 @@ function sortChambers(chambers: ChamberData[]): ChamberData[] {
       >
         Még nincsenek kamráid. Építs egyet a "+ Új Kamra" gombbal!
       </div>
-    </template>
+    </ErrorBoundary>
   </div>
 </template>

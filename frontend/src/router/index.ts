@@ -42,6 +42,18 @@ export const router = createRouter({
       component: () => import('../views/MutationView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/chat',
+      name: 'chat',
+      component: () => import('../views/ChatView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/queen',
+      name: 'queen',
+      component: () => import('../views/QueenView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 });
 

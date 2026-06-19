@@ -198,7 +198,7 @@ export const useChatStore = defineStore('chat', () => {
 
     // /w <username> <message>
     const whisperMatch = trimmed.match(/^\/w\s+(\S+)\s+(.+)$/s);
-    if (whisperMatch) {
+    if (whisperMatch && whisperMatch[1] && whisperMatch[2]) {
       return {
         channel: 'private',
         targetUser: whisperMatch[1],
@@ -208,13 +208,13 @@ export const useChatStore = defineStore('chat', () => {
 
     // /c <message>
     const clanMatch = trimmed.match(/^\/c\s+(.+)$/s);
-    if (clanMatch) {
+    if (clanMatch && clanMatch[1]) {
       return { channel: 'clan', message: clanMatch[1].trim() };
     }
 
     // /g <message>
     const globalMatch = trimmed.match(/^\/g\s+(.+)$/s);
-    if (globalMatch) {
+    if (globalMatch && globalMatch[1]) {
       return { channel: 'global', message: globalMatch[1].trim() };
     }
 

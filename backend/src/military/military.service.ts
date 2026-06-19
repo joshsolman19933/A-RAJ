@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EngineService } from '../engine/engine.service.js';
+import { PremiumService } from '../premium/premium.service.js';
 import {
   UnitType,
   UNIT_STATS,
@@ -31,6 +32,7 @@ export class MilitaryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly engineService: EngineService,
+    private readonly premiumService: PremiumService,
   ) {}
 
   /**
@@ -153,8 +155,10 @@ export class MilitaryService {
       );
     }
 
-    // 7. Calculate hatch time for logging (instant for now)
-    const hatchMinutes = calculateHatchTime(unitType, hatchery.level);
+    // 7. Apply premium hatch boost if applicable
+    // TODO: When BullMQ hatch job scheduling is implemented, pass boostFactor to the job
+    const hatchBoost = await this.premiumService.getHatchBoostFactor(userId);
+    const boostedHatchMinutes = calculateHatchTime(unitType, hatchery.level) * hatchBoost;
 
     // 8. Create UnitBatch and deduct resources in a transaction
     const now = new Date();
@@ -186,7 +190,8 @@ export class MilitaryService {
 
     this.logger.log(
       `Hatched ${requestedCount}x ${unitType} in hive ${hive.id} ` +
-        `(Hatchery lv${hatchery.level}, effective time: ${hatchMinutes}min) | ` +
+        `(Hatchery lv${hatchery.level}, time: ${boostedHatchMinutes.toFixed(1)}min` +
+        `${hatchBoost < 1 ? ' PREMIUM' : ''}) | ` +
         `Cost: ${totalBiomassCost} bio, ${totalWaterCost} water, ${totalHeatCost} heat`,
     );
 

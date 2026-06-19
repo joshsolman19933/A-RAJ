@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { EngineModule } from './engine/engine.module.js';
@@ -11,12 +12,26 @@ import { MovementModule } from './movement/movement.module.js';
 import { ClanModule } from './clan/clan.module.js';
 import { WsModule } from './ws/ws.module.js';
 import { PheromoneModule } from './pheromone/pheromone.module.js';
+import { PveModule } from './pve/pve.module.js';
+import { QueenModule } from './queen/queen.module.js';
+import { PremiumModule } from './premium/premium.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    // BullMQ — first async queue infrastructure! Connects to Redis for job scheduling.
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get<string>('REDIS_HOST', 'localhost'),
+          port: config.get<number>('REDIS_PORT', 6379),
+        },
+      }),
     }),
     PrismaModule,
     AuthModule,
@@ -29,6 +44,9 @@ import { PheromoneModule } from './pheromone/pheromone.module.js';
     ClanModule,
     WsModule,
     PheromoneModule,
+    QueenModule,
+    PveModule,
+    PremiumModule,
   ],
 })
 export class AppModule {}

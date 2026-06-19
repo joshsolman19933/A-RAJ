@@ -6,7 +6,7 @@ import { useMilitaryStore } from '@/stores/military.store';
 import { useMovementStore } from '@/stores/movement.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'vue-router';
-import { HexType, HEX_SIZE_PX, PheromoneType } from '@a-raj/shared';
+import { HexType, HEX_SIZE_PX, PheromoneType, QueenTrainingStatus } from '@a-raj/shared';
 import type { MapHexData, HexCoord, PheromoneTrailData } from '@a-raj/shared';
 import { axialToPixel, pixelToAxial } from '@a-raj/shared';
 import { wsClient } from '@/lib/ws-client';
@@ -14,6 +14,8 @@ import { api } from '@/services/auth.service';
 import AttackPanel from '@/components/combat/AttackPanel.vue';
 import CombatReport from '@/components/combat/CombatReport.vue';
 import AttackNotification from '@/components/combat/AttackNotification.vue';
+import SwarmTargetPicker from '@/components/queen/SwarmTargetPicker.vue';
+import { queenService } from '@/services/queen.service';
 
 const mapStore = useMapStore();
 const hiveStore = useHiveStore();
@@ -68,6 +70,8 @@ onMounted(async () => {
   if (!hiveStore.hasHive) {
     await hiveStore.fetchHive();
   }
+  // Pre-fetch military units for SwarmTargetPicker
+  await militaryStore.fetchUnits();
   await loadViewport();
   window.addEventListener('resize', onResize);
   onResize();
@@ -468,6 +472,54 @@ const canAttackSelected = computed(() => {
   return false;
 });
 
+// --- Swarm target picker ---
+const showSwarmPicker = ref(false);
+const swarmTarget = ref<MapHexData | null>(null);
+const hasReadyQueen = ref(false);
+
+async function checkQueenReady() {
+  try {
+    const res = await queenService.getQueenStatus();
+    hasReadyQueen.value = res.status?.status === QueenTrainingStatus.READY;
+  } catch {
+    hasReadyQueen.value = false;
+  }
+}
+
+function openSwarmPicker() {
+  if (!mapStore.selectedHex) return;
+  swarmTarget.value = mapStore.selectedHex;
+  showSwarmPicker.value = true;
+}
+
+function closeSwarmPicker() {
+  showSwarmPicker.value = false;
+  swarmTarget.value = null;
+}
+
+function onSwarmLaunched() {
+  showSwarmPicker.value = false;
+  swarmTarget.value = null;
+  hasReadyQueen.value = false;
+  mapStore.clearSelection();
+}
+
+const canSwarmSelected = computed(() => {
+  const hex = mapStore.selectedHex;
+  if (!hex) return false;
+  return hex.type === HexType.EMPTY && hasReadyQueen.value;
+});
+
+// Check Queen ready status when hex is selected
+watch(
+  () => mapStore.selectedHex,
+  () => {
+    if (mapStore.selectedHex?.type === HexType.EMPTY) {
+      checkQueenReady();
+    }
+  },
+);
+
 // Center on player hive
 watch(
   () => hiveStore.hasHive,
@@ -591,6 +643,13 @@ watch(
         ⚔️ Támadás
       </button>
       <button
+        v-if="canSwarmSelected"
+        class="mt-2 w-full py-1.5 rounded text-xs font-medium bg-purple-900/40 border border-purple-700/30 text-purple-300 hover:bg-purple-900/60 transition-colors"
+        @click="openSwarmPicker()"
+      >
+        &#9819; Rajzás Indítása
+      </button>
+      <button
         class="mt-2 text-xs text-zinc-600 hover:text-zinc-400"
         @click="mapStore.clearSelection()"
       >
@@ -624,6 +683,12 @@ watch(
     </div>
 
     <AttackPanel v-if="showAttackPanel" :target="attackTarget" @close="closeAttackPanel()" />
+    <SwarmTargetPicker
+      v-if="showSwarmPicker && swarmTarget"
+      :target="swarmTarget"
+      @close="closeSwarmPicker()"
+      @launched="onSwarmLaunched()"
+    />
     <CombatReport />
     <AttackNotification />
   </div>

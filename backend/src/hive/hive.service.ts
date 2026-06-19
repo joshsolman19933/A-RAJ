@@ -16,7 +16,7 @@ import {
   calculateBuildCost,
   calculateBuildTime,
 } from '@a-raj/shared';
-import type { HiveData, ChamberData } from '@a-raj/shared';
+import type { HiveData, HiveBrief, ChamberData } from '@a-raj/shared';
 
 /**
  * Hive service — manages hive state and chamber upgrades.
@@ -60,18 +60,49 @@ export class HiveService {
   }
 
   /**
+   * List all hives for a user (brief summary).
+   */
+  async getAllHives(userId: string): Promise<HiveBrief[]> {
+    const hives = await this.prisma.hive.findMany({
+      where: { userId },
+      orderBy: [{ q: 'asc' }, { r: 'asc' }],
+    });
+
+    return hives.map((h) => ({
+      id: h.id,
+      q: h.q,
+      r: h.r,
+      resources: {
+        biomass: h.biomass,
+        water: h.water,
+        heat: h.heat,
+        dnaNectar: h.dnaNectar,
+      },
+    }));
+  }
+
+  /**
    * Get the current hive state for a user.
+   * If hiveId is provided, fetches that specific hive (must belong to user).
+   * Otherwise returns the first hive found.
    * Runs lazy calculation to bring resources up to date before returning.
    */
-  async getHive(userId: string): Promise<HiveData> {
+  async getHive(userId: string, hiveId?: string): Promise<HiveData> {
     const hiveInclude = { chambers: true, unitBatches: true, mutations: true };
 
     let hive = await this.prisma.hive.findFirst({
-      where: { userId },
+      where: hiveId ? { id: hiveId, userId } : { userId },
       include: hiveInclude,
     });
 
-    // Lazy creation: if no hive exists yet, create one
+    // If a specific hiveId was requested and not found, throw
+    if (!hive && hiveId) {
+      throw new NotFoundException(
+        `Hive ${hiveId} not found or does not belong to user`,
+      );
+    }
+
+    // Lazy creation: if no hive exists yet (only when no specific hiveId)
     if (!hive) {
       await this.createInitialHive(userId);
       hive = await this.prisma.hive.findFirst({

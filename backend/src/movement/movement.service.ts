@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EngineService } from '../engine/engine.service.js';
 import { CombatService } from '../combat/combat.service.js';
+import { PveService } from '../pve/pve.service.js';
 import {
   UnitType,
   UNIT_STATS,
@@ -29,6 +30,7 @@ export class MovementService {
     private readonly prisma: PrismaService,
     private readonly engineService: EngineService,
     private readonly combatService: CombatService,
+    private readonly pveService: PveService,
   ) {}
 
   /**
@@ -204,6 +206,8 @@ export class MovementService {
     );
 
     // 8. Resolve combat instantly (all unit manipulation happens here in one $transaction)
+    const isPveTarget = targetHex.type === 'PVE_NEST';
+
     const combatReport = await this.combatService.resolveCombat({
       movementId: movement.id,
       attackerHiveId: hive.id,
@@ -212,6 +216,13 @@ export class MovementService {
       targetR,
       units: unitSelections,
     });
+
+    // 9. If attacker won against a PvE nest, mark it defeated for respawn
+    if (isPveTarget && combatReport.isVictory) {
+      this.pveService.markDefeated(targetQ, targetR).catch((err) => {
+        this.logger.error(`Failed to mark PvE nest defeated: ${err}`);
+      });
+    }
 
     const movementData: MovementData = {
       id: movement.id,

@@ -7,7 +7,7 @@
 /* eslint-disable no-console */
 
 import { PrismaClient } from '@prisma/client';
-import { HexType, hexesInRadius, MAP_STARTING_RADIUS } from '@a-raj/shared';
+import { HexType, hexesInRadius, MAP_STARTING_RADIUS, PveNestTier } from '@a-raj/shared';
 
 const prisma = new PrismaClient();
 
@@ -23,8 +23,9 @@ function seededRandom(seed: number): () => number {
 async function main() {
   console.log('🌍 Seeding A RAJ world map...');
 
-  // Clear existing map data
+  // Clear existing map data and PvE nest records
   await prisma.mapHex.deleteMany();
+  await prisma.pveNest.deleteMany();
 
   const center = { q: 0, r: 0 };
   const radius = MAP_STARTING_RADIUS; // 50
@@ -39,6 +40,9 @@ async function main() {
   const batchSize = 500;
   let inserted = 0;
 
+  // Collect PvE nest coordinates for PveNest record creation
+  const pveNestCoords: Array<{ q: number; r: number; tier: string }> = [];
+
   for (let i = 0; i < coords.length; i += batchSize) {
     const batch = coords.slice(i, i + batchSize).map(({ q, r }) => {
       const roll = rand();
@@ -46,6 +50,17 @@ async function main() {
 
       if (roll < 0.03) {
         type = HexType.PVE_NEST; // 3% PvE nests
+        const tierRoll = rand();
+        pveNestCoords.push({
+          q,
+          r,
+          tier:
+            tierRoll < 0.50
+              ? PveNestTier.EASY
+              : tierRoll < 0.85
+                ? PveNestTier.MEDIUM
+                : PveNestTier.HARD,
+        });
       } else if (roll < 0.08) {
         type = HexType.LAKE;      // 5% lakes
       } else if (roll < 0.18) {
@@ -64,6 +79,32 @@ async function main() {
 
     inserted += batch.length;
   }
+
+  // Create PveNest records with tier-based stats
+  console.log(`   Creating ${pveNestCoords.length} PvE nest records with tiers...`);
+
+  for (let i = 0; i < pveNestCoords.length; i += batchSize) {
+    const batch = pveNestCoords.slice(i, i + batchSize).map((n) => ({
+      q: n.q,
+      r: n.r,
+      tier: n.tier,
+    }));
+
+    await prisma.pveNest.createMany({
+      data: batch,
+      skipDuplicates: true,
+    });
+  }
+
+  const tierCounts = {
+    easy: pveNestCoords.filter((n) => n.tier === PveNestTier.EASY).length,
+    medium: pveNestCoords.filter((n) => n.tier === PveNestTier.MEDIUM).length,
+    hard: pveNestCoords.filter((n) => n.tier === PveNestTier.HARD).length,
+  };
+
+  console.log(
+    `      EASY: ${tierCounts.easy}, MEDIUM: ${tierCounts.medium}, HARD: ${tierCounts.hard}`,
+  );
 
   // Mark existing hives as HIVE type on the map
   const hives = await prisma.hive.findMany();

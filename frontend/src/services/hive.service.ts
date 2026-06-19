@@ -1,5 +1,5 @@
 import { api } from './auth.service';
-import type { HiveData } from '@a-raj/shared';
+import type { HiveData, HiveBrief } from '@a-raj/shared';
 
 export interface UpgradeChamberResponse {
   chamber: {
@@ -16,8 +16,15 @@ export interface UpgradeChamberResponse {
 }
 
 export const hiveService = {
-  async getHive(): Promise<HiveData> {
-    const { data } = await api.get<HiveData>('/hive');
+  async getHive(hiveId?: string): Promise<HiveData> {
+    const { data } = await api.get<HiveData>('/hive', {
+      params: hiveId ? { hiveId } : undefined,
+    });
+    return data;
+  },
+
+  async getAllHives(): Promise<HiveBrief[]> {
+    const { data } = await api.get<HiveBrief[]>('/hive/list');
     return data;
   },
 

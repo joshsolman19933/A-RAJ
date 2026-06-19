@@ -117,7 +117,7 @@ function icon(type: string): string {
 
 <template>
   <div
-    class="rounded-lg border bg-black/40 transition-all hover:border-red-800/50"
+    class="rounded-lg border bg-black/40 transition-all hover:border-red-800/50 chamber-card"
     :class="[
       isMaxLevel ? 'border-zinc-800/50 opacity-70' : 'border-red-950/30',
       isQueen ? 'ring-1 ring-red-900/50' : '',
@@ -141,6 +141,8 @@ function icon(type: string): string {
       <button
         v-if="!isQueen && !isMaxLevel"
         :disabled="building"
+        :aria-label="`${def?.name ?? 'Kamra'} fejlesztése ${nextLevel}. szintre`"
+        :title="`${def?.name ?? 'Kamra'} → ${nextLevel}. szint`"
         class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all"
         :class="building
           ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'

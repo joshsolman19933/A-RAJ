@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EngineService } from '../engine/engine.service.js';
+import { PveService } from '../pve/pve.service.js';
 import {
   UnitType,
   UNIT_STATS,
@@ -10,15 +11,6 @@ import {
   RAID_LOOT_CAPACITY_FACTOR,
 } from '@a-raj/shared';
 import type { UnitBatchBrief, CombatReport } from '@a-raj/shared';
-
-// --- PvE Nest Presets ---
-const PVE_NEST_PRESET = {
-  attackPhysical: 50,
-  attackAcid: 20,
-  defensePhysical: 40,
-  defenseAcid: 15,
-  resources: { biomass: 200, water: 100, dnaNectar: 10 },
-};
 
 /**
  * Combat service — resolves combat between attacker and defender.
@@ -38,6 +30,7 @@ export class CombatService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly engineService: EngineService,
+    private readonly pveService: PveService,
   ) {}
 
   /**
@@ -141,12 +134,23 @@ export class CombatService {
         level: c.level,
       }));
     } else {
-      // PvE nest defender — use preset stats
-      defenderPower =
-        PVE_NEST_PRESET.defensePhysical + PVE_NEST_PRESET.defenseAcid;
-      defenderBiomass = PVE_NEST_PRESET.resources.biomass;
-      defenderWater = PVE_NEST_PRESET.resources.water;
-      defenderDnaNectar = PVE_NEST_PRESET.resources.dnaNectar;
+      // PvE nest defender — use tier-based stats from PveService
+      const nestConfig = await this.pveService.getNestTierConfig(
+        targetQ,
+        targetR,
+      );
+
+      if (!nestConfig) {
+        throw new Error(
+          `PvE nest at (${targetQ}, ${targetR}) is not available (already defeated or not found)`,
+        );
+      }
+
+      const pve = nestConfig.config;
+      defenderPower = pve.defensePhysical + pve.defenseAcid;
+      defenderBiomass = pve.lootBiomass;
+      defenderWater = pve.lootWater;
+      defenderDnaNectar = pve.lootDnaNectar;
     }
 
     // Calculate casualty rates
@@ -272,6 +276,10 @@ export class CombatService {
                 dnaNectar: { decrement: resourcesLooted.dnaNectar ?? 0 },
               },
             });
+          } else {
+            // PvE nest defeated — mark for respawn (needs to run AFTER transaction)
+            // We can't call pveService.markDefeated() inside the transaction
+            // because it schedules a BullMQ job. Use a deferred call pattern.
           }
         } else if (attackType === AttackType.SIEGE) {
           // Destroy chambers (player hives only)

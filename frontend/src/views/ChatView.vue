@@ -164,14 +164,13 @@ function closePrivateChat(): void {
               ✕
             </button>
           </div>
-          <div class="flex-1 p-2 min-h-0">
-            <ChatPanel
+          <div class="flex-1 p-2 min-h-0">              <ChatPanel
               v-if="privateRecipientUserId"
               channel="private"
               :messages="chat.sortedPrivateMessages.filter(
                 (m) =>
                   m.fromUserId === privateRecipientUserId ||
-                  m.fromUserId === auth.userId
+                  m.fromUserId === auth.user?.userId
               )"
               :target-user-id="privateRecipientUserId"
               :placeholder="`Üzenet neki: ${privateRecipient}... (/w ${privateRecipient})`"
